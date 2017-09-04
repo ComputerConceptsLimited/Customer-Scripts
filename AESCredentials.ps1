@@ -22,6 +22,7 @@ if (!$Credentials) {
     return
 }
 
+# Build filenames
 $aesfile  = $FolderBrowser.SelectedPath + '\' + $Credentials.UserName + '.key'
 $credfile = $FolderBrowser.SelectedPath + '\' + $Credentials.UserName + '.txt'
 $incscr   = $FolderBrowser.SelectedPath + '\' + $Credentials.UserName + '.ps1'
