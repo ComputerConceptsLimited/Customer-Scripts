@@ -22,10 +22,12 @@ if (!$Credentials) {
     return
 }
 
+$UserName = $Credentials.UserName
+
 # Build filenames
-$aesfile  = $FolderBrowser.SelectedPath + '\' + $Credentials.UserName + '.key'
-$credfile = $FolderBrowser.SelectedPath + '\' + $Credentials.UserName + '.txt'
-$incscr   = $FolderBrowser.SelectedPath + '\' + $Credentials.UserName + '.ps1'
+$aesfile  = $FolderBrowser.SelectedPath + '\' + $UserName + '.key'
+$credfile = $FolderBrowser.SelectedPath + '\' + $UserName + '.txt'
+$incscr   = $FolderBrowser.SelectedPath + '\' + $UserName + '.ps1'
 
 # Check that we can write files to the selected folder
 Try { [io.file]::OpenWrite($aesfile).close() }
@@ -39,5 +41,13 @@ $aeskey | Out-File $aesfile
 # Encrypt credentials using key and write encrypted version to disk
 ConvertFrom-SecureString -SecureString $Credentials.Password | ConvertTo-SecureString | ConvertFrom-SecureString -Key $aeskey | Out-File $credfile
 
-# At this point both the encrypted credential password and the AES-256 key used to encrypt it have been written to disk
-# //TODO - write out script to be included to establish this credential object automatically in a calling script.
+# Write out .ps1 script to be 'included' from other automation scripts to provide credentials
+$script = "# Locations of our .key and .txt user files (change if necessary):"
+$script += "try {"
+$script += "`$key = Get-Content $aesfile"
+$script += "`$pass = Get-Content $credfile | ConvertTo-SecureString -Key `$key"
+$script += "`$$UserName = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $UserName, `$pass"
+$script += "} catch {"
+$script += "  Write-Warning 'Error reading credential files'"
+$script += "}"
+$script | Out-File $incscr -Encoding ascii
