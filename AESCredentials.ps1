@@ -16,7 +16,7 @@ if ($result -eq 'Cancel') {
     return
 }
 
-$Credentials = Get-Credential -Message 'Enter the user name and password for the credentials to be encrypted'
+$Credentials = Get-Credential -Message 'Enter credentials to be encrypted'
 if (!$Credentials) {
     Write-Warning "No credentials entered, script exiting"
     return
@@ -31,7 +31,7 @@ $incscr   = $FolderBrowser.SelectedPath + '\' + $UserName + '.ps1'
 
 # Check that we can write files to the selected folder
 Try { [io.file]::OpenWrite($aesfile).close() }
-Catch { Write-Warning "Unable to write to $aesfile, check directory and user file system permissions, exiting" }
+Catch { Write-Warning "Unable to write to $aesfile, check file system permissions, exiting" }
 
 # Generate new secure AES-256 key and write to disk
 $aeskey = New-Object Byte[] 32      # 32 bytes x 8 bit = 256-bit AES
@@ -42,12 +42,14 @@ $aeskey | Out-File $aesfile
 ConvertFrom-SecureString -SecureString $Credentials.Password | ConvertTo-SecureString | ConvertFrom-SecureString -Key $aeskey | Out-File $credfile
 
 # Write out .ps1 script to be 'included' from other automation scripts to provide credentials
-$script = "# Locations of our .key and .txt user files (change if necessary):"
-$script += "try {"
-$script += "`$key = Get-Content $aesfile"
-$script += "`$pass = Get-Content $credfile | ConvertTo-SecureString -Key `$key"
-$script += "`$$UserName = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $UserName, `$pass"
-$script += "} catch {"
-$script += "  Write-Warning 'Error reading credential files'"
+$script = "# Change locations of .key and .txt files if necessary below:`r`n"
+$script += "try {`r`n"
+$script += "`$key = Get-Content $aesfile`r`n"
+$script += "`$pass = Get-Content $credfile | ConvertTo-SecureString -Key `$key`r`n"
+$script += "`$$UserName = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $UserName, `$pass`r`n"
+$script += "Remove-Variable key`r`n"
+$script += "Remove-Variable pass`r`n"
+$script += "} catch {`r`n"
+$script += "  Write-Warning 'Error reading credential files'`r`n"
 $script += "}"
 $script | Out-File $incscr -Encoding ascii
