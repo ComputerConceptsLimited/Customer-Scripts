@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Shell script to extend root volume group on a CentOS Linux image
+# Shell script to extend root volume group on a CentOS 7.x Linux image
 #
 # **** VERY dangerous to use in any other situation ****
+# **** DO NOT USE ON CENTOS 6.x IMAGES ****
 #
 # Jon Waite, 2018-01-04
 #
